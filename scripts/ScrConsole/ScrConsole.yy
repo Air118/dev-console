@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"ScrConsole",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"ScrConsole",
+  "parent":{
+    "name":"Console",
+    "path":"folders/Console.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
