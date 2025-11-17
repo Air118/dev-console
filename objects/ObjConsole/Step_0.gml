@@ -1,7 +1,7 @@
 input = ConInputGetKeys();
 
-if (active && input.deactivate) ConDeactivate(self);
-else if (!active && input.activate) ConActivate(self);
+if (active && input.deactivate) ConDeactivate();
+else if (!active && input.activate) ConActivate();
 
 if (!active) 
 {
@@ -12,15 +12,15 @@ if (!active)
 ConInputWindow();
 if (window_focus) 
 {
-    ConInputMessage();
-    ConInputMessageRemove();
+    text_box.Update();
+    if (input.enter && text_box.GetTextLength() > 0) ConExecuteMessage(text_box.text);
+        
     ConInputMessageHistory();
     ConInputAutoComplete();
-    ConInputCursor();
     ConInputUtility();
 }
 
-auto_complete_matching_commands = ConAutoCompletionGetMatchingCommands(message);
+auto_complete_matching_commands = ConAutoCompletionGetMatchingCommands(text_box.text);
 if (array_length(auto_complete_matching_commands) < 2) auto_complete_selected_command = 0;
 ConAutoCompleteMoveTop();
 

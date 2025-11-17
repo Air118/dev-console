@@ -23,6 +23,7 @@
   "resources":[
     {"id":{"name":"FntAgency","path":"fonts/FntAgency/FntAgency.yy",},},
     {"id":{"name":"ObjConsole","path":"objects/ObjConsole/ObjConsole.yy",},},
+    {"id":{"name":"ObjConSpawner","path":"objects/ObjConSpawner/ObjConSpawner.yy",},},
     {"id":{"name":"RmTest","path":"rooms/RmTest/RmTest.yy",},},
     {"id":{"name":"ScrConsole","path":"scripts/ScrConsole/ScrConsole.yy",},},
   ],

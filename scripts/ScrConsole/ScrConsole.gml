@@ -4,6 +4,7 @@ enum ConLogErrorSeverity
     WARNING,
     ERROR,
 };
+global.con_instance = noone;
 
 #region Console instance
 
@@ -13,163 +14,156 @@ function ConCreateInstance()
 {
     ConDestroy();
     
-    var _con = instance_create_depth(0, 0, -10000, ObjConsole);
-    ConReset(_con);
-    
-    return _con;
+    global.con_instance = instance_create_depth(0, 0, -10000, ObjConsole);
+    ConReset();
 }
 /// @desc Destroys a console. If no instance is supplied, it will destroy all existing instances
-/// @param {ObjConsole} con Console instance
-function ConDestroy(con = ObjConsole)
+/// @param {bool} all_instances Destroy all instances or just the one stored in the global variable.
+function ConDestroy(all_instances = false)
 {
-    if (con == ObjConsole) 
+    if (all_instances) 
     {
         instance_destroy(ObjConsole);
         return;
     }
     else 
     {
-        if (ConIsValidConsole(con))
+        if (ConIsValidConsole())
         {
-            instance_destroy(con);
+            instance_destroy(global.con_instance);
         }	
     }
 }
 /// @desc Resets the console to the default state.
-/// @param {ObjConsole} con Console instance
-function ConReset(con)
+function ConReset()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    ConWindowResetPosition(con);
-    ConWindowResetSize(con);
+    ConWindowResetPosition();
+    ConWindowResetSize();
     
-    ConLogClear(con);
-    
-    ConMessageClear(con);
-    con.message_id = 0;
+    ConLogClear();
+    ConMessageClear();
+    ConMessageHistoryClear();
 
-    ConMessageHistoryClear(con);
+    global.con_instance.message_id = 0;
+
+    ConLog("Developer console", c_lime);
+    ConLog("Version: " + global.con_instance.__version, c_lime);
+    ConLog("", c_lime);
+    ConLog("Use \"con_command_list\" to get a list of all available commands.", c_lime);  
+    ConLog("Use \"con_help <command_name>\" to get information about a specific command.", c_lime);  
     
-    ConLog(con, "Developer console", c_lime);
-    ConLog(con, "Version: " + con.__version, c_lime);
-    ConLog(con, "", c_lime);
-    ConLog(con, "Use \"con_command_list\" to get a list of all available commands.", c_lime);  
-    ConLog(con, "Use \"con_help <command_name>\" to get information about a specific command.", c_lime);  
-    
-    con.alarm[0] = 1;  
+    global.con_instance.alarm[0] = 1;  
 }
 
 /// @desc Checks if the instance is a valid console instance.
-/// @param {Id.Instance} con Console instance
 /// @return {bool}
-function ConIsValidConsole(con)
+function ConIsValidConsole()
 {
-    if (!instance_exists(con)) return false;
-    if (con.object_index != ObjConsole) return false;
+    if (!instance_exists(global.con_instance)) return false;
+    if (global.con_instance.object_index != ObjConsole) return false;
         
     return true;    
 }
 
 /// @desc Activates the console instance
-/// @param {Id.Instance} con Console instance
-function ConActivate(con)
+function ConActivate()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.active = true;
+    global.con_instance.active = true;
 }
 /// @desc Deactivates the console instance
-/// @param {Id.Instance} con Console instance
-function ConDeactivate(con)
+function ConDeactivate()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.active = false;
+    global.con_instance.active = false;
 }
 
 #endregion
 #region Window transformation
 
 /// @desc Sets the console window position relative to the room coordinates.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {real} x New X position
 /// @param {real} y New Y position
 /// @param {bool} log Log the position change in the console
-function ConWindowSetPosition(con, x, y, log = false)
+function ConWindowSetPosition(x, y, log = false)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
     var _x = string_digits(x);
     var _y = string_digits(y);
     
     if (string_length(_x + _y) == 0) 
     {
-        ConLogError(con, string("Invalid argument/s: (x: {0}, y: {1})", x, y));
+        ConLogError(string("Invalid argument/s: (x: {0}, y: {1})", x, y));
         return;    
     };
     
-    con.window.x = real(_x); 
-    con.window.y = real(_y); 
+    global.con_instance.window.x = real(_x); 
+    global.con_instance.window.y = real(_y); 
     
-    if (log) ConLog(con, string("Console position set to ({0}, {1})", x, y), c_aqua);
+    if (log) ConLog(string("Console position set to ({0}, {1})", x, y), c_aqua);
 }
 /// @desc Sets the console window size relative to the room coordinates.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {real} w New width
 /// @param {real} h New height
 /// @param {bool} log Log the position change in the console
-function ConWindowSetSize(con, w, h, log = false)
+function ConWindowSetSize(w, h, log = false)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     
     var _w = string_digits(w);
     var _h = string_digits(h);
     
     if (string_length(_w + _h) == 0) 
     {
-        ConLogError(con, string("Invalid argument/s: (w: {0}, h: {1})", w, h));
+        ConLogError(, string("Invalid argument/s: (w: {0}, h: {1})", w, h));
         return;    
     };
     
-    con.window.w = max(con.window.min_w, real(_w)); 
-    con.window.h = max(con.window.min_h, real(_h)); 
+    global.con_instance.window.w = max(global.con_instance.window.min_w, real(_w)); 
+    global.con_instance.window.h = max(global.con_instance.window.min_h, real(_h)); 
     
-    if (log) ConLog(con, string("Console size set to ({0}, {1})", w, h), c_aqua);
+    if (log) ConLog(string("Console size set to ({0}, {1})", w, h), c_aqua);
 }
 
 /// @desc Resets the console's position to the default one (default_x, default_y).
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {bool} log Log the position change in the console
-function ConWindowResetPosition(con, log = false)
+function ConWindowResetPosition(log = false)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.window.x = con.default_x;
-    con.window.y = con.default_y;
+    global.con_instance.window.x = global.con_instance.default_x;
+    global.con_instance.window.y = global.con_instance.default_y;
     
-    if (log) ConLog(con, string("Console position reset to ({0}, {1})", con.default_x, con.default_y), c_aqua);
+    if (log) ConLog(string("Console position reset to ({0}, {1})", global.con_instance.default_x, global.con_instance.default_y), c_aqua);
 }
 /// @desc Resets the console's size to the default one (default_w, default_h).
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {bool} log Log the position change in the console
-function ConWindowResetSize(con, log = false)
+function ConWindowResetSize(log = false)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.window.w = con.default_w;
-    con.window.h = con.default_h;
+    global.con_instance.window.w = global.con_instance.default_w;
+    global.con_instance.window.h = global.con_instance.default_h;
     
-    if (log) ConLog(con, string("Console size reset to ({0}, {1})", con.default_w, con.default_h), c_aqua);
+    if (log) ConLog(string("Console size reset to ({0}, {1})", global.con_instance.default_w, global.con_instance.default_h), c_aqua);
 }
 /// @desc Handle manual resizing and moving of the window.
 function ConWindowTransform()
 {
-    if (move) ConWindowSetPosition(self, mouse_x - move_anchor_x, mouse_y - move_anchor_y);
+    if (move) ConWindowSetPosition(mouse_x - move_anchor_x, mouse_y - move_anchor_y);
         
-    if (resize) ConWindowSetSize(self, mouse_x - window.x, mouse_y - window.y);
-    if (resize_h) ConWindowSetSize(self, mouse_x - window.x, window.h);    
-    if (resize_v) ConWindowSetSize(self, window.w, mouse_y - window.y);   
+    if (resize) ConWindowSetSize(mouse_x - window.x, mouse_y - window.y);
+    if (resize_h) ConWindowSetSize(mouse_x - window.x, window.h);    
+    if (resize_v) ConWindowSetSize(window.w, mouse_y - window.y);   
         
     window.w = max(window.min_w, window.w);
     window.h = max(window.min_h, window.h); 
@@ -179,34 +173,32 @@ function ConWindowTransform()
 #region Log
 
 /// @desc Logs a message to display in the console log.
-/// @param {Id.Instance} con Console instance
 /// @param {string} message Message string to log
 /// @param {Constant.Color} color The color of the message
-function ConLog(con, message, color = c_white)
+function ConLog(message, color = c_white)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    while (array_length(con.message_log) >= con.message_log_size)
+    while (array_length(global.con_instance.message_log) >= global.con_instance.message_log_size)
     {
-        array_delete(con.message_log, 0, 1);
+        array_delete(global.con_instance.message_log, 0, 1);
     }
     
-    array_push(con.message_log, {
-        id: con.message_id,
+    array_push(global.con_instance.message_log, {
+        id: global.con_instance.message_id,
         time: string("{0}{1}:{2}{3}:{4}{5}", current_hour < 10 ? "0" : "", current_hour, current_minute < 10 ? "0" : "", current_minute, current_second < 10 ? "0" : "", current_second),
         text: message,
         color: color,
     });
     
-    con.message_id++;
+    global.con_instance.message_id++;
 }
 /// @desc Logs an error message to display the console log. Error messages have [ERROR] prefix and are red.
-/// @param {Id.Instance} con Console instance
 /// @param {string} error_message Error string to log
 /// @param {int} severity Severity of the message. Look up 'ConLogErrorSeverity'.
-function ConLogError(con, error_message, severity = ConLogErrorSeverity.ERROR)
+function ConLogError(error_message, severity = ConLogErrorSeverity.ERROR)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
     var _message = "";
     var _color = c_white;
@@ -225,88 +217,51 @@ function ConLogError(con, error_message, severity = ConLogErrorSeverity.ERROR)
     
     _message += string(error_message);
     
-    ConLog(con, _message, _color);
+    ConLog(_message, _color);
 }
 /// @desc Clears the console's log clean. Irreversible.
-/// @param {Id.Instance} con Console instance
-function ConLogClear(con)
+function ConLogClear()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.message_log = [];
+    global.con_instance.message_log = [];
 }
 /// @desc Set log messages detail level. Levels range from 0 to 2. Depending on the level, the time of the message or the message id will be drawn.
-/// @param {Id.Instance} con Console instance
 /// @param {real} detail Detail level
-function ConLogSetDetail(con, detail)
+function ConLogSetDetail(detail)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     if (!is_numeric(detail)) 
     {
-        ConLogError(con, string("Invalid parameter type. Expected 'int'. [detail: {0}({1})]", detail, typeof(detail)));
+        ConLogError(string("Invalid parameter type. Expected 'int'. [detail: {0}({1})]", detail, typeof(detail)));
         return;
     }    
     
     detail = clamp(detail, 0, 2);
     detail = floor(detail);
     
-    con.message_log_detail_level = detail;
+    global.con_instance.message_log_detail_level = detail;
 }
 
 #endregion
 #region Message
 
 /// @desc Clears message history. Pressing up or down arrow will iterate over previously entered messages in that history.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {string} message New message
-function ConMessageSetMessage(con, message)
+function ConMessageSetMessage(message)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     
-    con.message = message;
-    con.cursor_position = string_length(con.message);
+    global.con_instance.text_box.TextSet(message);
 }
 /// @desc Clears current message.
-/// @param {Id.Instance} con Console instance
-function ConMessageClear(con)
+/// @param {Id.Instance}  Console instance
+function ConMessageClear()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    con.message = "";
-    con.cursor_position = 0;
-}
-/// @desc Removes a specified amount of characters based the cursor position.
-/// @param {Id.Instance} con Console instance
-/// @param {real} direction Can be either -1 or 1. -1 is backwards (backspace), 1 is forwards (delete)
-/// @param {real} amount Amount of characters to remove
-function ConMessageRemoveCharacters(con, direction, amount)
-{
-    if (!ConIsValidConsole(con)) return;
-    if (!is_numeric(direction)) return; 
-    if (!is_numeric(amount)) return; 
-    if (direction == 0 || amount == 0) return;
-    
-    // > -1 - backspace : 1 - delete
-    if (direction > 0) direction = 1;
-    else if (direction < 0) direction = -1;
-        
-    amount = round(amount);
-    
-    var _msg = con.message;
-    if (string_length(_msg) == 0) return;
-        
-    if (direction == -1) 
-    {
-        var _amt = min(amount, string_length(_msg));
-        _msg = string_delete(_msg, con.cursor_position, -_amt);
-        con.cursor_position -= _amt;
-    }
-    if (direction == 1) 
-    {
-        _msg = string_delete(_msg, con.cursor_position + 1, min(amount, string_length(_msg)));
-    }
-    
-    con.message = _msg;
+    global.con_instance.text_box.TextClear();
 }
 /// @desc Parses the message into an array of strings.
 /// @param {string} message Message to parse
@@ -322,23 +277,23 @@ function ConParseMessage(message)
 #region Message history
 
 /// @desc Adds a message to the message history. Pressing up or down arrow will iterate over previously entered messages in that history.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {string} message Message to add
-function ConMessageHistoryAdd(con, message)
+function ConMessageHistoryAdd(message)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    array_push(con.message_history, message);
-    con.message_history_current = -1;
+    array_push(global.con_instance.message_history, message);
+    global.con_instance.message_history_current = -1;
 }
 /// @desc Clears message history. Pressing up or down arrow will iterate over previously entered messages in that history.
-/// @param {Id.Instance} con Console instance
-function ConMessageHistoryClear(con)
+/// @param {Id.Instance}  Console instance
+function ConMessageHistoryClear()
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     
-    con.message_history = [];
-    con.message_history_current = -1;
+    global.con_instance.message_history = [];
+    global.con_instance.message_history_current = -1;
 }
 
 #endregion
@@ -352,7 +307,7 @@ function ConAutoCompletionGetMatchingCommands(msg)
     
     // > Temporary fix. This is here because if the autocomplete suggestions are shown and you destroy the console instance,
     // > the game will crash because it cannot find an instance of the ObjConsole object.
-    if (!instance_exists(ObjConsole)) return []; 
+    if (!ConIsValidConsole()) return []; 
     
     var _commands = struct_get_names(global.con_commands);
     var _valid_commands = [];
@@ -368,7 +323,7 @@ function ConAutoCompletionGetMatchingCommands(msg)
 /// @desc 
 function ConAutoCompleteSetMessage(msg)
 {
-    ConMessageSetMessage(self, msg);
+    ConMessageSetMessage(msg);
     auto_complete_selected_command = 0;
 }
 
@@ -390,39 +345,39 @@ function ConAutoCompleteMoveTop()
 #region Cursor
 
 /// @desc Moves the cursor to the left by a specified amount. Does not wrap around.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {real} amount Number of spaces to move
-function ConCursorMoveLeft(con, amount)
+function ConCursorMoveLeft(amount)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     if (!is_numeric(amount)) return;
         
-    if (con.cursor_position <= 0) return;
+    if (global.con_instance.cursor_position <= 0) return;
         
-    con.cursor_position -= min(con.cursor_position, amount);
+    global.con_instance.cursor_position -= min(global.con_instance.cursor_position, amount);
 }
 /// @desc Moves the cursor to the right by a specified amount. Does not wrap around.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {real} amount Number of spaces to move
-function ConCursorMoveRight(con, amount)
+function ConCursorMoveRight(amount)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
     if (!is_numeric(amount)) return;
         
-    if (con.cursor_position >= string_length(con.message)) return;
+    if (global.con_instance.cursor_position >= string_length(global.con_instance.message)) return;
         
-    con.cursor_position += min(string_length(con.message) - con.cursor_position, amount);
+    global.con_instance.cursor_position += min(string_length(global.con_instance.message) - global.con_instance.cursor_position, amount);
 }
 
 #endregion
 #region Commands
 
 /// @desc Checks if a command exists in the "commands" dictionary.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {string} command Command name
-function ConIsValidCommand(con, command)
+function ConIsValidCommand(command)
 { 
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
     var _commands = struct_get_names(global.con_commands);
     for (var i = 0; i < array_length(_commands); ++i)
@@ -433,32 +388,32 @@ function ConIsValidCommand(con, command)
     return false;
 }
 /// @desc Checks if parameter array is of valid length.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {array} param_array Parameter array
 /// @param {real} param_count Amount of parameters required by the command
-function ConIsParamArrayValid(con, param_array, param_count)
+function ConIsParamArrayValid(param_array, param_count)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
             
     if (!is_array(param_array))
     {
-        ConLogError(con, "\"param_array\" is not an array.");
+        ConLogError("\"param_array\" is not an array.");
         return false;
     }
     if (array_length(param_array) != param_count)
     {
-        ConLog(con, string("\"param_array\" has {0} parameters. {1} required.", array_length(param_array), param_count));
+        ConLog(string("\"param_array\" has {0} parameters. {1} required.", array_length(param_array), param_count));
         return false;
     }
     
     return true;
 }
 /// @desc Executes a command directly.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {string} message Message
-function ConExecuteCommand(con, command)
+function ConExecuteCommand(command)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
     var _parsed_array = ConParseMessage(command);
     if (array_length(_parsed_array) == 0) return;
@@ -466,7 +421,7 @@ function ConExecuteCommand(con, command)
     var _params = [];
     array_copy(_params, 0, _parsed_array, 1, array_length(_parsed_array) - 1);
     
-    if (ConIsValidCommand(con, _parsed_array[0]))
+    if (ConIsValidCommand(_parsed_array[0]))
     {
         var _command = global.con_commands[$ _parsed_array[0]];
         if (array_length(_command.arguments) > 0) 
@@ -477,7 +432,7 @@ function ConExecuteCommand(con, command)
             }
             else 
             {
-                ConLog(self, string("Invalid argument number. Required ({0}), Given ({1}).", _command.arguments_count, array_length(_params)));
+                ConLog(string("Invalid argument number. Required ({0}), Given ({1}).", _command.arguments_count, array_length(_params)));
             }
         }
         else 
@@ -487,21 +442,21 @@ function ConExecuteCommand(con, command)
     }
     else 
     {
-        ConLog(self, string("Invalid command: \"{0}\"", _parsed_array[0]));
+        ConLog(string("Invalid command: \"{0}\"", _parsed_array[0]));
     }
 }
 /// @desc Executes the input message from the text box.
-/// @param {Id.Instance} con Console instance
+/// @param {Id.Instance}  Console instance
 /// @param {string} message Message
-function ConExecuteMessage(con, message)
+function ConExecuteMessage(message)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
-    ConLog(con, message);
-    ConMessageClear(con);
+    ConLog(message);
+    ConMessageClear();
     
-    ConMessageHistoryAdd(con, message);
-    ConExecuteCommand(con, message);
+    ConMessageHistoryAdd(message);
+    ConExecuteCommand(message);
 }
 
 #endregion
@@ -614,7 +569,7 @@ function ConInputWindow()
         window.y + close_rect.ph
     );
     on_close_rect = _mouse_on_close;
-    if (mouse_check_button_pressed(mb_left) && _mouse_on_close) ConExecuteCommand(self, "con_kill"); 
+    if (mouse_check_button_pressed(mb_left) && _mouse_on_close) ConDestroy(); 
         
     // > Window focus
     var _mouse_on_window = point_in_rectangle(
@@ -632,81 +587,6 @@ function ConInputWindow()
         }
     }
 }
-/// @desc Handle character input into the message box.
-function ConInputMessage()
-{
-    if (keyboard_check_pressed(vk_anykey)) 
-    { 
-        var key_char = keyboard_lastchar;
-        
-        if (ord(key_char) >= 32 && ord(key_char) <= 126 && string_length(message) < message_size)
-        {
-            message = string_insert(key_char, message, cursor_position + 1);
-            ConCursorMoveRight(self, 1);
-        }       
-        
-        keyboard_lastchar = "";
-    }
-    
-    if (input.enter && string_length(message) > 0) ConExecuteMessage(self, message);
-}
-/// @desc Handle removing the characters from the current message.
-function ConInputMessageRemove()
-{
-    if (input.backspace && string_length(message) > 0)
-    {
-        if (input.ctrl)
-        {
-            ConMessageRemoveCharacters(self, -1, cursor_position - string_last_pos_ext(" ", message, cursor_position) + 1);
-        }
-        else if (input.shift)
-        {
-            ConMessageClear(self);
-        }
-        else 
-        {
-            if (cursor_position > 0) ConMessageRemoveCharacters(self, -1, 1);
-        }
-    }
-    if (input.del)
-    {
-        if (input.ctrl)
-        {
-            ConMessageRemoveCharacters(self, 1, abs(cursor_position - string_pos_ext(" ", message, cursor_position + 1)));
-        }
-        else if (input.shift)
-        {
-            clipboard_set_text(message);
-            ConMessageClear(self);
-        }
-        else 
-        {
-            if (cursor_position < string_length(message)) ConMessageRemoveCharacters(self, 1, 1);
-        }
-    }
-}
-/// @desc Handle cursor movement.
-function ConInputCursor()
-{
-    if (input.cursor_left)
-    {
-        if (input.ctrl)
-        {
-            ConCursorMoveLeft(self, cursor_position - string_last_pos_ext(" ", message, cursor_position) + 1);
-        } 
-        else ConCursorMoveLeft(self, 1);
-    }
-    if (input.cursor_right)
-    {
-        if (input.ctrl)
-        {
-            ConCursorMoveRight(self, abs(cursor_position - string_pos_ext(" ", message, cursor_position + 1)));
-        }
-        else ConCursorMoveRight(self, 1);
-    }
-    if (input.cursor_start) ConCursorMoveLeft(self, string_length(message) + 1);
-    if (input.cursor_end) ConCursorMoveRight(self, string_length(message) + 1);
-}
 /// @desc Handle iterating over message history.
 function ConInputMessageHistory()
 {
@@ -721,7 +601,7 @@ function ConInputMessageHistory()
                
         if (message_history_current > _history_size - 1) message_history_current = 0;
         
-        ConMessageSetMessage(self, message_history[message_history_current]);   
+        ConMessageSetMessage(message_history[message_history_current]);   
     }
     if (input.message_history_prev)
     {
@@ -732,9 +612,10 @@ function ConInputMessageHistory()
         
         if (message_history_current < 0) message_history_current = _history_size - 1;
         
-        ConMessageSetMessage(self, message_history[message_history_current]);   
+        ConMessageSetMessage(message_history[message_history_current]);   
     }
 }
+/// @desc Handle iterating over auto-complete suggestions.
 function ConInputAutoComplete()
 { 
     if (input.message_history_next) // > Up
@@ -760,30 +641,30 @@ function ConInputAutoComplete()
 function ConInputUtility()
 {
     // > Reset
-    if (input.reset_position) ConWindowResetPosition(self, true); 
-    if (input.reset_size) ConWindowResetSize(self, true); 
-    if (input.reset) ConReset(self); 
+    if (input.reset_position) ConWindowResetPosition(true); 
+    if (input.reset_size) ConWindowResetSize(true); 
+    if (input.reset) ConReset(); 
         
     // > Copy
     if (input.copy) 
     {
         clipboard_set_text(message);
-        // ConLog(con, string("Copied \"{0}\" to clipboard", message), c_aqua);
+        // ConLog(, string("Copied \"{0}\" to clipboard", message), c_aqua);
     }
     
     // > Cut
     if (input.cut) 
     {
         clipboard_set_text(message);
-        // ConLog(con, string("Copied \"{0}\" to clipboard", message), c_aqua);
-        ConMessageClear(self);
+        // ConLog(, string("Copied \"{0}\" to clipboard", message), c_aqua);
+        ConMessageClear();
     }
     
     // > Paste
     if (input.paste) 
     {
-        ConMessageSetMessage(self, clipboard_get_text());
-        // ConLog(con, string("Pasted \"{0}\" from clipboard", message), c_aqua);
+        ConMessageSetMessage(clipboard_get_text());
+        // ConLog(, string("Pasted \"{0}\" from clipboard", message), c_aqua);
     }
 }
 
@@ -860,7 +741,7 @@ function ConDrawLogSurface()
             _message += (message_log_detail_level > 1) ? string("[{0}] ", _data.id) : "";
             _message += (message_log_detail_level > 0) ? string("{0} ", _data.time) : "";
             _message += "> ";
-            _message += _data.text;
+            _message += string(_data.text);
             
             draw_set_valign(fa_bottom);
             draw_text_transformed_color(
@@ -905,7 +786,7 @@ function ConDrawMessageSurface()
         
         draw_set_alpha(text_cursor_visible ? 1 : 0);
         
-        var _cursor_x = string_length(message) > 0 ? (cursor_position / string_length(message)) * string_width(message) : 0;
+        var _cursor_x = string_length(text_box.text) > 0 ? (text_box.cursor_position / string_length(text_box.text)) * string_width(text_box.text) : 0;
         draw_line(
             4 + _cursor_x, 2,
             4 + _cursor_x, 22    
@@ -914,7 +795,7 @@ function ConDrawMessageSurface()
         draw_set_alpha(1);
         draw_set_color(c_white);
         
-        draw_text(3, 3, message);
+        draw_text(3, 3, text_box.text);
         
         surface_reset_target();
         draw_surface(_surf, window.x + text_rect.pl, window.y + window.h - text_rect.pb - text_rect.h);
@@ -994,7 +875,7 @@ function ConDrawOther()
 /// @desc Draws auto complete suggestions below the message box.
 function ConDrawAutoCompleteSuggestions()
 {
-    if (array_length(auto_complete_matching_commands) < 1 || auto_complete_matching_commands[auto_complete_selected_command] == message) return;
+    if (array_length(auto_complete_matching_commands) < 1 || auto_complete_matching_commands[auto_complete_selected_command] == text_box.text) return;
     
     var _suggestion_rect = {
         x: window.x + text_rect.pl + 1,
@@ -1003,9 +884,9 @@ function ConDrawAutoCompleteSuggestions()
         h: 24,
     }
     var _scrollbar_rect = {
-        x: _suggestion_rect.x + _suggestion_rect.w - 4,
+        x: _suggestion_rect.x + _suggestion_rect.w,
         y: _suggestion_rect.y,
-        w: 4,
+        w: -4,
         h: _suggestion_rect.h,
     }
     var _suggestion_count = min(auto_complete_max_suggestions, array_length(auto_complete_matching_commands))
@@ -1100,9 +981,9 @@ function ConDrawAutoCompleteSuggestions()
 #endregion
 #region Helpers
 
-function ConMouseAction(con, x, y, w, h, button, callback, hold = false)
+function ConMouseAction(x, y, w, h, button, callback, hold = false)
 {
-    if (!ConIsValidConsole(con)) return;
+    if (!ConIsValidConsole()) return;
         
     var _mouse_in_rect = point_in_rectangle(
         mouse_x, mouse_y,
@@ -1146,39 +1027,39 @@ ConRegisterCommand(
     "con_clear", 
     "Clears the message log.", 
     "con_clear", 
-    function() { ConLogClear(ObjConsole) }
+    function() { ConLogClear() }
 );
 ConRegisterCommand(
     "con_clear_mh", 
     "Clears the message history.", 
     "con_clear_mh", 
-    function() { ConMessageHistoryClear(ObjConsole) }
+    function() { ConMessageHistoryClear() }
 );
 ConRegisterCommand(
     "con_position_reset", 
     "Resets window position to the default position.", 
     "con_position_reset", 
-    function() { ConWindowResetPosition(ObjConsole, true) }
+    function() { ConWindowResetPosition(true) }
 );
 ConRegisterCommand(
     "con_size_reset", 
     "Resets window size to the default size.", 
     "con_size_reset", 
-    function() { ConWindowResetSize(ObjConsole, true) }
+    function() { ConWindowResetSize(true) }
 );
 
 ConRegisterCommand(
     "con_position_set", 
     "Set window position to desired x and y.", 
     "con_position_set <x> <y>", 
-    function(arg) { ConWindowSetPosition(ObjConsole, arg[0], arg[1], true) },
+    function(arg) { ConWindowSetPosition(arg[0], arg[1], true) },
     ["real", "real"]
 );
 ConRegisterCommand(
     "con_size_set", 
-    "Resets window size to the default size.", 
+    "Set window size to desized w and h.", 
     "con_size_set <x> <y>", 
-    function(arg) { ConWindowSetSize(ObjConsole, arg[0], arg[1], true) },
+    function(arg) { ConWindowSetSize(arg[0], arg[1], true) },
     ["real", "real"]
 );
 
@@ -1186,7 +1067,11 @@ ConRegisterCommand(
     "con_help",
     "Shows the description and usage of a command.",
     "con_help <command_name>",
-    function(arg) { ConLog(ObjConsole, "Description: " + global.con_commands[$ arg[0]].help, c_ltgray); ConLog(ObjConsole, "Usage: " + global.con_commands[$ arg[0]].usage, c_ltgray); },
+    function(arg) 
+    { 
+        if (!ConIsValidCommand(arg[0])) { ConLog(string("Invalid command: \"{0}\"", arg[0])); return; }
+        ConLog("Description: " + global.con_commands[$ arg[0]].help, c_ltgray); ConLog("Usage: " + global.con_commands[$ arg[0]].usage, c_ltgray); 
+    },
     ["string"]
 );
 ConRegisterCommand(
@@ -1199,7 +1084,7 @@ ConRegisterCommand(
         array_sort(_commands, true);
         for (var i = 0; i < struct_names_count(global.con_commands); ++i) 
         { 
-            ConLog(ObjConsole, _commands[i], c_ltgray) 
+            ConLog(_commands[i], c_ltgray) 
         } 
     },
     []
@@ -1212,3 +1097,165 @@ ConRegisterCommand(
 );
 
 #endregion 
+#region Textbox
+
+// > TODO: Limit text length to the 'max_length'
+// > TODO: Copy, cut, paste features
+// > TODO: Rewrite removing characters
+// > TODO: Add selection
+// > TODO: Add a delay between first input and a hold input.
+ 
+function ConTextBoxCreate()
+{
+    return 
+    {
+        text: "",
+        cursor_position: 0,
+         
+        max_length: 64,
+        
+        is_focused: true,
+        
+        Update: function()
+        {
+            if (!self.is_focused) return;
+            
+            self.InputCharacters();
+            self.InputBackspace();
+            self.InputDelete();
+            
+            self.CursorUpdate();
+        }, 
+        InputCharacters: function()
+        {
+            if (string_length(keyboard_lastchar) > 0)
+            {
+                if (ord(keyboard_lastchar) >= 32 && ord(keyboard_lastchar) <= 126)
+                {
+                    self.text = string_insert(keyboard_lastchar, self.text, self.cursor_position + 1);
+                    ++self.cursor_position;
+                }
+                keyboard_lastchar = "";
+            }
+        },
+        RemoveCharacters: function(direction, amount)
+        {
+            if (!is_numeric(direction)) return; 
+            if (!is_numeric(amount)) return; 
+            if (direction == 0 || amount == 0) return;
+            
+            // > -1 - backspace : 1 - delete
+            if (direction > 0) direction = 1;
+            else if (direction < 0) direction = -1;
+                
+            amount = round(amount);
+            
+            var _msg = self.text;
+            if (string_length(_msg) == 0) return;
+                
+            if (direction == -1) 
+            {
+                if (self.cursor_position == 0) return;
+                
+                var _amt = min(amount, string_length(_msg));
+                _msg = string_delete(_msg, self.cursor_position, -_amt);
+                self.cursor_position -= _amt;
+            }
+            if (direction == 1) 
+            {
+                _msg = string_delete(_msg, self.cursor_position + 1, min(amount, string_length(_msg)));
+            }
+            
+            self.text = _msg;
+        },
+        CursorUpdate: function()
+        {
+            var _left = keyboard_check_pressed(vk_left);
+            var _right = keyboard_check_pressed(vk_right);
+            
+            var _ctrl = keyboard_check(vk_control);
+            var _shift = keyboard_check(vk_shift);
+
+            var _home = keyboard_check(vk_home);
+            var _end = keyboard_check(vk_end);
+            
+            if (_left)
+            {
+                if (_ctrl) 
+                {
+                    var _next_space = string_last_pos_ext(" ", self.text, self.cursor_position);
+                    self.cursor_position -= self.cursor_position - _next_space;
+                }
+                if (self.cursor_position > 0) self.cursor_position--;
+            }
+            if (_right)
+            {
+                if (_ctrl) 
+                {
+                    var _next_space = string_pos_ext(" ", self.text, self.cursor_position + 1);
+                    if (_next_space == 0) self.cursor_position = self.GetTextLength();
+                    else self.cursor_position += _next_space - self.cursor_position - 1;
+                }
+                
+                if (self.cursor_position < self.GetTextLength()) self.cursor_position++;
+            }
+            
+            if (_home) self.cursor_position = 0;
+            if (_end) self.cursor_position = self.GetTextLength();
+        },
+        
+        InputBackspace: function()
+        {
+            if (self.GetTextLength() == 0) return;
+            
+            var _backspace = keyboard_check_pressed(vk_backspace);
+            if (!_backspace) return;
+                
+            var _ctrl = keyboard_check(vk_control);
+            var _shift = keyboard_check(vk_shift);
+            
+            if (_ctrl) self.RemoveCharacters(-1, self.cursor_position - string_last_pos_ext(" ", self.text, self.cursor_position) + 1);
+            else if (_shift) self.TextClear();
+            else self.RemoveCharacters(-1, 1);
+        },
+        InputDelete: function()
+        {
+            if (self.GetTextLength() == 0) return;
+            if (self.cursor_position == self.GetTextLength()) return;
+            
+            var _delete = keyboard_check_pressed(vk_delete);
+            if (!_delete) return;
+                
+            var _ctrl = keyboard_check(vk_control);
+            var _shift = keyboard_check(vk_shift);
+            
+            if (_ctrl) self.RemoveCharacters(1, abs(self.cursor_position - string_pos_ext(" ", self.text, self.cursor_position + 1)));
+            else if (_shift) { clipboard_set_text(self.text); self.TextClear() };
+            else self.RemoveCharacters(1, 1);
+        },
+        
+        GetTextLength: function()
+        {
+            return string_length(self.text);
+        },
+        GetTextCursorLength: function()
+        {
+            return string_length(string_copy(text, 1, cursor_position));
+        },
+    
+        TextClear: function()
+        {
+            self.text = "";
+            self.cursor_position = 0;  
+        },
+        TextSet: function(new_text)
+        {
+            if (!is_string(new_text)) return;
+            
+            self.text = new_text;   
+            self.cursor_position = self.GetTextLength();
+        },
+    }
+}
+
+#endregion
