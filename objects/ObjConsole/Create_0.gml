@@ -1,10 +1,3 @@
-/*
- * Developer console : Made by Piotr Kościukiewicz
- * 
- * This console aims to help debug or modify stuff while the game is running.
- * 
-*/
-
 // > TODO: Add a scrollbar
 // > DONE TODO: Add a button for resizing the window
 // > DONE TODO: Make the commands accept parameters
